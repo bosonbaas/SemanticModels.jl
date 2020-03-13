@@ -22,11 +22,13 @@ draw(d::HomExpr) = draw(wd(d))
     death(A)::Hom(A, munit()) ⊣ A::Ob
 end
 
-#⊗(A::Ports{Main.Epidemiology.Hom,Symbol}, B::Ports{Main.Epidemiology.Hom,Symbol}) = Ports([A.ports..., B.ports...])
 spontaneous(A::Ports, B::Ports) = singleton_diagram(Epidemiology.Hom, Box(:→, A, B))
 exposure(A::Ports, B::Ports, C::Ports) = singleton_diagram(Epidemiology.Hom, Box(:exposure, A⊗B, C⊗B))
-mmerge(A::Ports{Epidemiology.Hom}, Symbol) = implicit_mmerge(A, 2)
+death(A::Ports) = singleton_diagram(Epidemiology.Hom, Box(:𝗫, A, Ports([])))
 mcopy(A::Ports{Epidemiology.Hom}, Symbol) = implicit_mcopy(A, 2)
+mmerge(A::Ports{Epidemiology.Hom}, Symbol) = implicit_mmerge(A, 2)
+
+
 @syntax FreeEpidemiology(ObExpr, HomExpr) Epidemiology begin
     otimes(A::Ob, B::Ob) = associate_unit(new(A,B), munit)
     otimes(f::Hom, g::Hom) = associate(new(f,g))
@@ -58,6 +60,7 @@ draw(seir)
 seir2 = compose(mcopy(S)⊗id(I), id(S)⊗seir)
 draw(seir2)
 
+draw(death(S))
 
 d = @program Disease (s::S, e::E, i::I) begin
     e1, i1 = exposure{S,I,E}(s,i)
@@ -72,3 +75,59 @@ end
 draw(d)
 
 draw(d⋅d)
+
+seirdef = to_hom_expr(FreeEpidemiology, d)
+try
+    add_definition!(Disease, :seir, seirdef)
+catch
+    println("INFO: definition already added.")
+end
+
+# if the disease is fatal, we need to add a death component
+seird = @program Disease (s::S, e::E, i::I) begin
+    e1, i1 = exposure{S,I,E}(s,i)
+    i2 = spontaneous{E,I}(e1)
+    e = [e, e1]
+    e_out = spontaneous{E,E}(e)
+    i1 = [i1, i2]
+    r = spontaneous{I,R}(i1)
+    s_out = spontaneous{S,S}(s)
+    death{I}(i1)
+    return s_out, e_out, spontaneous{I,I}(i1)
+end
+#TODO: This does not get translated correctly, bug?
+seirddef = to_hom_expr(FreeEpidemiology, seird)
+try
+    add_definition!(Disease, :seird, seirddef)
+catch
+    println("INFO: definition already added.")
+end
+
+seirgen = generator(Disease, :seir)
+seirdgen = generator(Disease, :seird)
+
+
+ncities(city,n::Int) = compose([city for i in 1:n]...)
+city³ = ncities(seirgen, 3)
+draw(city³)
+
+dcity³ = wd(city³)
+dc3 = substitute(dcity³, box_ids(dcity³), [d,d,d])
+@show dc3 == ncities(d, 3)
+draw(dc3)
+
+import Base: repeat
+repeat(d::WiringDiagram, n::Int) = compose([d for i in 1:n]...)
+repeat(d::FreeEpidemiology.Hom, n::Int) = compose([d for i in 1:n]...)
+
+draw(ncities(seirdgen, 3))
+draw(repeat(seird, 3))
+
+draw(seirddef)
+#
+# using TikzPictures
+# using Catlab.Graphics.TikZWiringDiagrams
+# using Convex
+# using SCS
+#
+# to_tikz(seirddef, labels=true)

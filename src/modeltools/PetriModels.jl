@@ -105,8 +105,8 @@ function ⊔(gModel::PetriModel, hModel::PetriModel)
     newΔ = [(dictReplace(n[1], dict), dictReplace(n[2], dict)) for n in h.Δ]
     newΛ = [dictReplace(n, dict) for n in h.Λ]
     newΦ = [dictReplace(n, dict) for n in h.Φ]
-    PetriModel(Petri.Model(union(g.S, newS), 
-                equnion(g.Δ, newΔ), 
+    PetriModel(Petri.Model(union(g.S, newS),
+                equnion(g.Δ, newΔ),
                 equnion(g.Λ, newΛ),
                 equnion(g.Φ, newΦ)))
 end
@@ -137,7 +137,7 @@ function pushout(pModel::PetriModel, pModel2::PetriModel)
     Δ = equnion(pm.Δ, pm2.Δ)
     Λ = equnion(pm.Λ, pm2.Λ)
     Φ = equnion(pm.Φ, pm2.Φ)
-    return PetriModel(states, Δ, Λ, Φ)
+    return model(PetriModel, Petri.Model(states, Δ, Λ, Φ))
 end
 
 
@@ -156,7 +156,7 @@ function dropdown(pL::PetriModel, pC::PetriModel, pL′::PetriModel)
     Δ = union(setdiff(pl′.Δ, pl.Δ), pc.Δ)
     Λ = union(setdiff(pl′.Λ, pl.Λ), pc.Λ)
     Φ = union(setdiff(pl′.Φ, pl.Φ), pc.Φ)
-    return PetriModel(states, Δ, Λ, Φ)
+    return model(PetriModel, Petri.Model(states, Δ, Λ, Φ))
 end
 
 end

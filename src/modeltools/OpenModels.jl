@@ -2,8 +2,6 @@ module OpenModels
 import Base: ==
 using SemanticModels.ModelTools
 import SemanticModels.ModelTools: model
-using Catlab.Graphics.Graphviz
-import Catlab.Graphics.Graphviz: Graph, Edge
 
 
 export OpenModel
